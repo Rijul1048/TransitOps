@@ -1,15 +1,18 @@
-from ninja import Router
 from typing import List, Optional
-from django.shortcuts import get_object_or_404
+
 from django.db import transaction
-from ..models import Vehicle, MaintenanceLog
+from django.shortcuts import get_object_or_404
+from ninja import Router
+
+from ..auth import require_roles
+from ..models import MaintenanceLog, User, Vehicle
 from ..schemas.maintenance import MaintenanceCreateSchema
 from ..utils import apply_search
 
+router = Router(tags=["Maintenance"], auth=require_roles(User.Role.FLEET_MANAGER))
 
-router = Router(tags=["Maintenance"])
 
-@router.post("", response={201: dict, 400: dict})
+@router.post("", response={201: dict, 400: dict}, auth=require_roles(User.Role.FLEET_MANAGER))
 @transaction.atomic
 def log_maintenance(request, payload: MaintenanceCreateSchema):
     vehicle = get_object_or_404(Vehicle, id=payload.vehicle_id)
@@ -32,7 +35,8 @@ def log_maintenance(request, payload: MaintenanceCreateSchema):
 
     return 201, {"id": log.id, "status": log.status, "vehicle_status": vehicle.status}
 
-@router.get("", response=List[dict])
+
+@router.get("", response=List[dict], auth=require_roles(User.Role.FLEET_MANAGER))
 def list_maintenance_logs(request, search: Optional[str] = None):
     logs = MaintenanceLog.objects.select_related("vehicle").all().order_by("-id")
     if search and search.strip():
@@ -58,7 +62,8 @@ def list_maintenance_logs(request, search: Optional[str] = None):
         for log in logs
     ]
 
-@router.patch("/{log_id}/complete", response={200: dict, 400: dict})
+
+@router.patch("/{log_id}/complete", response={200: dict, 400: dict}, auth=require_roles(User.Role.FLEET_MANAGER))
 @transaction.atomic
 def complete_maintenance(request, log_id: int):
     log = get_object_or_404(MaintenanceLog, id=log_id)
