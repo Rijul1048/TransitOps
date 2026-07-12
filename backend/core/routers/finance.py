@@ -12,7 +12,7 @@ from ..utils import apply_search
 router = Router(tags=["Finance & Analytics"], auth=require_roles(User.Role.FINANCIAL_ANALYST, User.Role.FLEET_MANAGER))
 
 
-@router.post("/fuel-logs", response={201: dict}, auth=require_roles(User.Role.FINANCIAL_ANALYST))
+@router.post("/fuel-logs", response={201: dict})
 def create_fuel_log(request, payload: FuelLogCreateSchema):
     vehicle = get_object_or_404(Vehicle, id=payload.vehicle_id)
     trip = get_object_or_404(Trip, id=payload.trip_id) if payload.trip_id else None
@@ -27,7 +27,7 @@ def create_fuel_log(request, payload: FuelLogCreateSchema):
     return 201, {"id": log.id, "message": "Fuel log recorded successfully."}
 
 
-@router.get("/fuel-logs", response=list, auth=require_roles(User.Role.FINANCIAL_ANALYST, User.Role.FLEET_MANAGER))
+@router.get("/fuel-logs", response=list)
 def list_fuel_logs(request, search: Optional[str] = None):
     logs = FuelLog.objects.select_related("vehicle", "trip").all().order_by("-id")
     if search and search.strip():

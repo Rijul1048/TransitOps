@@ -9,23 +9,51 @@ import {
   Navigation, 
   Wrench, 
   Fuel, 
-  BarChart3, 
-  Settings 
+  BarChart3,
 } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
 
-const navItems = [
-  { name: 'Dashboard', href: '/', icon: LayoutDashboard },
-  { name: 'Fleet', href: '/fleet', icon: Truck },
-  { name: 'Drivers', href: '/drivers', icon: Users },
-  { name: 'Trips', href: '/trips', icon: Navigation },
-  { name: 'Maintenance', href: '/maintenance', icon: Wrench },
-  { name: 'Fuel & Expenses', href: '/fuel-expenses', icon: Fuel },
-  { name: 'Analytics', href: '/analytics', icon: BarChart3 },
-  { name: 'Settings', href: '/settings', icon: Settings },
+type Role = 'FLEET_MANAGER' | 'DRIVER' | 'SAFETY_OFFICER' | 'FINANCIAL_ANALYST';
+
+const navItems: { name: string; href: string; icon: React.ElementType; roles: Role[] }[] = [
+  { 
+    name: 'Dashboard', href: '/', icon: LayoutDashboard, 
+    roles: ['FLEET_MANAGER', 'DRIVER', 'SAFETY_OFFICER', 'FINANCIAL_ANALYST'],
+  },
+  { 
+    name: 'Fleet', href: '/fleet', icon: Truck, 
+    roles: ['FLEET_MANAGER', 'DRIVER'],
+  },
+  { 
+    name: 'Drivers', href: '/drivers', icon: Users, 
+    roles: ['FLEET_MANAGER', 'SAFETY_OFFICER'],
+  },
+  { 
+    name: 'Trips', href: '/trips', icon: Navigation, 
+    roles: ['FLEET_MANAGER', 'DRIVER'],
+  },
+  { 
+    name: 'Maintenance', href: '/maintenance', icon: Wrench, 
+    roles: ['FLEET_MANAGER'],
+  },
+  { 
+    name: 'Fuel & Expenses', href: '/fuel-expenses', icon: Fuel, 
+    roles: ['FLEET_MANAGER', 'FINANCIAL_ANALYST'],
+  },
+  { 
+    name: 'Analytics', href: '/analytics', icon: BarChart3, 
+    roles: ['FLEET_MANAGER', 'FINANCIAL_ANALYST'],
+  },
 ];
 
 export default function Sidebar() {
   const pathname = usePathname();
+  const { user } = useAuth();
+  const userRole = user?.role as Role | undefined;
+
+  const visibleItems = userRole
+    ? navItems.filter((item) => item.roles.includes(userRole))
+    : navItems;
 
   return (
     <aside className="w-64 bg-[#121212] border-r border-gray-800 text-gray-300 min-h-screen flex flex-col p-4">
@@ -35,7 +63,7 @@ export default function Sidebar() {
       </div>
 
       <nav className="space-y-1 flex-1">
-        {navItems.map((item) => {
+        {visibleItems.map((item) => {
           const Icon = item.icon;
           const isActive = pathname === item.href;
           return (
@@ -56,4 +84,4 @@ export default function Sidebar() {
       </nav>
     </aside>
   );
-}
+}
