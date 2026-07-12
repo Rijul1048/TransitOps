@@ -1,15 +1,18 @@
-from ninja import Router
 from typing import List
-from django.shortcuts import get_object_or_404
+
 from django.db import transaction
+from django.shortcuts import get_object_or_404
 from django.utils import timezone
-from ..models import Vehicle, Driver, Trip, FuelLog
-from ..schemas.trips import CreateTripSchema, CompleteTripSchema  
+from ninja import Router
+
+from ..auth import require_roles
+from ..models import Driver, FuelLog, Trip, Vehicle
+from ..schemas.trips import CompleteTripSchema, CreateTripSchema
+
+router = Router(tags=["Trips"], auth=require_roles("DISPATCHER", "FLEET_MANAGER"))
 
 
-router = Router(tags=["Trips"])
-
-@router.get("", response=List[dict])
+@router.get("", response=List[dict], auth=require_roles("DISPATCHER", "FLEET_MANAGER"))
 def list_trips(request):
     trips = Trip.objects.select_related('vehicle', 'driver').all().order_by('-created_at')
     return [
@@ -32,7 +35,8 @@ def list_trips(request):
         for trip in trips
     ]
 
-@router.post("", response={201: dict, 400: dict})
+
+@router.post("", response={201: dict, 400: dict}, auth=require_roles("DISPATCHER"))
 def create_trip(request, payload: CreateTripSchema):
     vehicle = None
     driver = None
@@ -67,7 +71,8 @@ def create_trip(request, payload: CreateTripSchema):
     )
     return 201, {"id": trip.id, "trip_code": trip.trip_code, "status": trip.status}
 
-@router.post("/{trip_id}/dispatch", response={200: dict, 400: dict})
+
+@router.post("/{trip_id}/dispatch", response={200: dict, 400: dict}, auth=require_roles("DISPATCHER"))
 @transaction.atomic
 def dispatch_trip(request, trip_id: int):
     trip = get_object_or_404(Trip, id=trip_id)
@@ -85,14 +90,15 @@ def dispatch_trip(request, trip_id: int):
 
     return 200, {"detail": f"Trip {trip.trip_code} successfully dispatched."}
 
-@router.post("/{trip_id}/complete", response={200: dict, 400: dict})
+
+@router.post("/{trip_id}/complete", response={200: dict, 400: dict}, auth=require_roles("DISPATCHER"))
 @transaction.atomic
 def complete_trip(request, trip_id: int, payload: CompleteTripSchema):
     trip = get_object_or_404(Trip, id=trip_id)
-    
+
     if trip.status == Trip.Status.COMPLETED:
         return 400, {"detail": "Trip is already completed."}
-        
+
     trip.status = Trip.Status.COMPLETED
     trip.save()
 
@@ -100,7 +106,7 @@ def complete_trip(request, trip_id: int, payload: CompleteTripSchema):
         trip.vehicle.odometer_km = payload.final_odometer
         trip.vehicle.status = Vehicle.Status.AVAILABLE
         trip.vehicle.save()
-        
+
         if payload.fuel_consumed > 0:
             FuelLog.objects.create(
                 vehicle=trip.vehicle,
@@ -116,14 +122,15 @@ def complete_trip(request, trip_id: int, payload: CompleteTripSchema):
 
     return 200, {"detail": f"Trip {trip.trip_code} completed. Vehicle odometer updated and driver marked as Available."}
 
-@router.post("/{trip_id}/cancel", response={200: dict, 400: dict})
+
+@router.post("/{trip_id}/cancel", response={200: dict, 400: dict}, auth=require_roles("DISPATCHER"))
 @transaction.atomic
 def cancel_trip(request, trip_id: int):
     trip = get_object_or_404(Trip, id=trip_id)
-    
+
     if trip.status in [Trip.Status.COMPLETED, Trip.Status.CANCELLED]:
         return 400, {"detail": f"Cannot cancel a trip that is already {trip.status}."}
-        
+
     trip.status = Trip.Status.CANCELLED
     trip.save()
 
