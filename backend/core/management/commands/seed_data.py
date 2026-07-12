@@ -346,14 +346,13 @@ class Command(BaseCommand):
         self.stdout.write("Creating demo users (password: testpass123)...")
         demo_users = [
             ("fleet.manager@transitops.test", User.Role.FLEET_MANAGER),
-            ("dispatcher@transitops.test", User.Role.DISPATCHER),
+            ("driver@transitops.test", User.Role.DRIVER),
             ("safety.officer@transitops.test", User.Role.SAFETY_OFFICER),
             ("analyst@transitops.test", User.Role.FINANCIAL_ANALYST),
         ]
         for email, role in demo_users:
             if not User.objects.filter(email=email).exists():
                 user = User.objects.create_user(
-                    username=email.split("@")[0],
                     email=email,
                     password="testpass123",
                     role=role,
