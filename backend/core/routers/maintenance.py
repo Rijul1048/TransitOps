@@ -1,24 +1,30 @@
 from ninja import Router
-from typing import List
+from typing import List, Optional
 from django.shortcuts import get_object_or_404
 from django.db import transaction
 from ..models import Vehicle, MaintenanceLog
-from ..schemas.maintenance import MaintenanceCreateSchema  
+from ..schemas.maintenance import MaintenanceCreateSchema
+from ..utils import apply_search
 
 
 router = Router(tags=["Maintenance"])
 
-@router.post("", response={201: dict})
+@router.post("", response={201: dict, 400: dict})
 @transaction.atomic
 def log_maintenance(request, payload: MaintenanceCreateSchema):
     vehicle = get_object_or_404(Vehicle, id=payload.vehicle_id)
-    
+
+    if vehicle.status == Vehicle.Status.ON_TRIP:
+        return 400, {"detail": "Cannot log maintenance for a vehicle currently ON_TRIP. Please complete or cancel the active trip first."}
+    if vehicle.status == Vehicle.Status.RETIRED:
+        return 400, {"detail": "Cannot log maintenance for a retired vehicle."}
+
     log = MaintenanceLog.objects.create(
         vehicle=vehicle,
         service_type=payload.service_type,
         cost=payload.cost,
         service_date=payload.service_date,
-        status=MaintenanceLog.Status.IN_SHOP
+        status=MaintenanceLog.Status.IN_SHOP,
     )
 
     vehicle.status = Vehicle.Status.IN_SHOP
@@ -27,8 +33,17 @@ def log_maintenance(request, payload: MaintenanceCreateSchema):
     return 201, {"id": log.id, "status": log.status, "vehicle_status": vehicle.status}
 
 @router.get("", response=List[dict])
-def list_maintenance_logs(request):
-    logs = MaintenanceLog.objects.select_related('vehicle').all().order_by('-service_date')
+def list_maintenance_logs(request, search: Optional[str] = None):
+    logs = MaintenanceLog.objects.select_related("vehicle").all().order_by("-id")
+    if search and search.strip():
+        q = search.strip().lower()
+        logs = [
+            log for log in logs
+            if q in log.service_type.lower()
+            or q in log.status.lower()
+            or q in log.vehicle.reg_no.lower()
+            or q in log.vehicle.model_name.lower()
+        ]
     return [
         {
             "id": log.id,
@@ -47,7 +62,7 @@ def list_maintenance_logs(request):
 @transaction.atomic
 def complete_maintenance(request, log_id: int):
     log = get_object_or_404(MaintenanceLog, id=log_id)
-    
+
     if log.status == MaintenanceLog.Status.COMPLETED:
         return 400, {"detail": "Maintenance record is already marked as completed."}
 
@@ -61,5 +76,5 @@ def complete_maintenance(request, log_id: int):
 
     return 200, {
         "message": f"Maintenance completed for {vehicle.reg_no}. Vehicle restored to AVAILABLE status.",
-        "vehicle_status": vehicle.status
+        "vehicle_status": vehicle.status,
     }
