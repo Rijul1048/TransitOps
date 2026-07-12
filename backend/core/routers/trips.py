@@ -26,6 +26,7 @@ def list_trips(request):
             "vehicle_id": trip.vehicle.id if trip.vehicle else None,
             "vehicle_reg": trip.vehicle.reg_no if trip.vehicle else None,
             "vehicle_model": trip.vehicle.model_name if trip.vehicle else None,
+            "vehicle_odometer": trip.vehicle.odometer_km if trip.vehicle else None,
             "driver_id": trip.driver.id if trip.driver else None,
             "driver_name": trip.driver.name if trip.driver else None,
         }
@@ -92,6 +93,10 @@ def complete_trip(request, trip_id: int, payload: CompleteTripSchema):
     
     if trip.status == Trip.Status.COMPLETED:
         return 400, {"detail": "Trip is already completed."}
+    
+    # Odometer rollback prevention
+    if trip.vehicle and payload.final_odometer < trip.vehicle.odometer_km:
+        return 400, {"detail": f"Final odometer reading ({payload.final_odometer} km) cannot be less than the vehicle's current reading ({trip.vehicle.odometer_km} km)."}
         
     trip.status = Trip.Status.COMPLETED
     trip.save()
