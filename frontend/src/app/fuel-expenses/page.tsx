@@ -1,10 +1,13 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { api } from '@/lib/api';
+import { useSearch } from '@/contexts/SearchContext';
+import { matchesSearch } from '@/lib/search';
 import { Plus, X, Fuel } from 'lucide-react';
 
 export default function FuelExpensesPage() {
+  const { query } = useSearch();
   const [logs, setLogs] = useState<any[]>([]);
   const [vehicles, setVehicles] = useState<any[]>([]);
   const [trips, setTrips] = useState<any[]>([]);
@@ -63,6 +66,14 @@ export default function FuelExpensesPage() {
   const totalLiters = logs.reduce((s, l) => s + l.liters, 0);
   const totalCost = logs.reduce((s, l) => s + l.cost, 0);
 
+  const filteredLogs = useMemo(
+    () =>
+      logs.filter((log) =>
+        matchesSearch(query, log.vehicle_reg, log.vehicle_model, log.trip_code, log.date)
+      ),
+    [logs, query]
+  );
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
@@ -111,12 +122,14 @@ export default function FuelExpensesPage() {
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-800">
-            {logs.length === 0 ? (
+            {filteredLogs.length === 0 ? (
               <tr>
-                <td colSpan={6} className="px-4 py-8 text-center text-gray-500">No fuel logs found. Add your first entry.</td>
+                <td colSpan={6} className="px-4 py-8 text-center text-gray-500">
+                  {query ? `No fuel logs match "${query}".` : 'No fuel logs found. Add your first entry.'}
+                </td>
               </tr>
             ) : (
-              logs.map((log) => (
+              filteredLogs.map((log) => (
                 <tr key={log.id} className="hover:bg-gray-900/50 transition">
                   <td className="px-4 py-3 font-medium text-white">{log.vehicle_model} <span className="font-mono text-amber-500 text-xs">({log.vehicle_reg})</span></td>
                   <td className="px-4 py-3 font-mono text-xs text-sky-400">{log.trip_code ?? <span className="text-gray-600 italic">Standalone</span>}</td>
