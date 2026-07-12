@@ -1,7 +1,9 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { api } from '@/lib/api';
+import { useSearch } from '@/contexts/SearchContext';
+import { matchesSearch } from '@/lib/search';
 import { Plus, X, Play, CheckCircle2, Ban, MapPin } from 'lucide-react';
 
 interface Trip {
@@ -23,6 +25,7 @@ interface Trip {
 }
 
 export default function TripsPage() {
+  const { query } = useSearch();
   const [trips, setTrips] = useState<Trip[]>([]);
   const [vehicles, setVehicles] = useState<any[]>([]);
   const [drivers, setDrivers] = useState<any[]>([]);
@@ -61,12 +64,11 @@ export default function TripsPage() {
       const [tRes, vRes, dRes] = await Promise.all([
         api.get('/trips'),
         api.get('/vehicles/dispatch-pool'),
-        api.get('/drivers')
+        api.get('/drivers/dispatch-pool'),
       ]);
       setTrips(tRes.data);
       setVehicles(vRes.data);
-      // Only available drivers for dispatch
-      setDrivers(dRes.data.filter((d: any) => d.status === 'AVAILABLE' && new Date(d.license_expiry) >= new Date()));
+      setDrivers(dRes.data);
     } catch (err) {
       console.error(err);
     } finally {
@@ -148,6 +150,23 @@ export default function TripsPage() {
     }
   };
 
+  const filteredTrips = useMemo(
+    () =>
+      trips.filter((t) =>
+        matchesSearch(
+          query,
+          t.trip_code,
+          t.source,
+          t.destination,
+          t.status,
+          t.vehicle_reg,
+          t.vehicle_model,
+          t.driver_name
+        )
+      ),
+    [trips, query]
+  );
+
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'DRAFT':
@@ -194,12 +213,14 @@ export default function TripsPage() {
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-800">
-            {trips.length === 0 ? (
+            {filteredTrips.length === 0 ? (
               <tr>
-                <td colSpan={6} className="px-4 py-8 text-center text-gray-500">No trips found.</td>
+                <td colSpan={6} className="px-4 py-8 text-center text-gray-500">
+                  {query ? `No trips match "${query}".` : 'No trips found.'}
+                </td>
               </tr>
             ) : (
-              trips.map((t) => (
+              filteredTrips.map((t) => (
                 <tr key={t.id} className="hover:bg-gray-900/50 transition">
                   <td className="px-4 py-3 font-mono font-bold text-amber-500">{t.trip_code}</td>
                   <td className="px-4 py-3">

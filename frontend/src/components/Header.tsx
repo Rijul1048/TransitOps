@@ -1,13 +1,21 @@
 'use client';
 
+import { Search } from 'lucide-react';
+import { useSearch } from '@/contexts/SearchContext';
+
 export default function Header() {
+  const { query, setQuery } = useSearch();
+
   return (
     <header className="h-16 border-b border-gray-800 bg-[#121212] px-6 flex items-center justify-between">
-      <div className="w-96">
+      <div className="w-96 relative">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
         <input
           type="text"
-          placeholder="Search..."
-          className="w-full bg-[#1e1e1e] border border-gray-700 rounded-md px-3 py-1.5 text-sm text-gray-200 focus:outline-none focus:border-amber-500"
+          placeholder="Search fleet, drivers, trips..."
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          className="w-full bg-[#1e1e1e] border border-gray-700 rounded-md pl-9 pr-3 py-1.5 text-sm text-gray-200 focus:outline-none focus:border-amber-500"
         />
       </div>
 
