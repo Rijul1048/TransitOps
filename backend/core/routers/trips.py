@@ -10,7 +10,7 @@ from ..models import Driver, FuelLog, MaintenanceLog, Trip, User, Vehicle
 from ..schemas.trips import CompleteTripSchema, CreateTripSchema
 from ..utils import apply_search
 
-router = Router(tags=["Trips"], auth=require_roles(User.Role.DRIVER, User.Role.FLEET_MANAGER))
+router = Router(tags=["Trips"], auth=require_roles(User.Role.DISPATCHER, User.Role.FLEET_MANAGER))
 
 
 def _resolve_vehicle_status_after_release(vehicle: Vehicle) -> str:
@@ -24,7 +24,7 @@ def _resolve_vehicle_status_after_release(vehicle: Vehicle) -> str:
     return Vehicle.Status.AVAILABLE
 
 
-@router.get("", response=List[dict], auth=require_roles(User.Role.DRIVER, User.Role.FLEET_MANAGER))
+@router.get("", response=List[dict], auth=require_roles(User.Role.DISPATCHER, User.Role.FLEET_MANAGER))
 def list_trips(request, search: Optional[str] = None):
     trips = Trip.objects.select_related("vehicle", "driver").all().order_by("-updated_at", "-id")
     if search and search.strip():
@@ -62,7 +62,7 @@ def list_trips(request, search: Optional[str] = None):
     ]
 
 
-@router.post("", response={201: dict, 400: dict}, auth=require_roles(User.Role.DRIVER, User.Role.FLEET_MANAGER))
+@router.post("", response={201: dict, 400: dict}, auth=require_roles(User.Role.DISPATCHER, User.Role.FLEET_MANAGER))
 def create_trip(request, payload: CreateTripSchema):
     vehicle = None
     driver = None
@@ -96,7 +96,7 @@ def create_trip(request, payload: CreateTripSchema):
     return 201, {"id": trip.id, "trip_code": trip.trip_code, "status": trip.status}
 
 
-@router.post("/{trip_id}/dispatch", response={200: dict, 400: dict}, auth=require_roles(User.Role.DRIVER, User.Role.FLEET_MANAGER))
+@router.post("/{trip_id}/dispatch", response={200: dict, 400: dict}, auth=require_roles(User.Role.DISPATCHER, User.Role.FLEET_MANAGER))
 @transaction.atomic
 def dispatch_trip(request, trip_id: int):
     trip = get_object_or_404(Trip, id=trip_id)
@@ -127,7 +127,7 @@ def dispatch_trip(request, trip_id: int):
     return 200, {"detail": f"Trip {trip.trip_code} successfully dispatched."}
 
 
-@router.post("/{trip_id}/complete", response={200: dict, 400: dict}, auth=require_roles(User.Role.DRIVER, User.Role.FLEET_MANAGER))
+@router.post("/{trip_id}/complete", response={200: dict, 400: dict}, auth=require_roles(User.Role.DISPATCHER, User.Role.FLEET_MANAGER))
 @transaction.atomic
 def complete_trip(request, trip_id: int, payload: CompleteTripSchema):
     trip = get_object_or_404(Trip, id=trip_id)
@@ -176,7 +176,7 @@ def complete_trip(request, trip_id: int, payload: CompleteTripSchema):
     }
 
 
-@router.post("/{trip_id}/cancel", response={200: dict, 400: dict}, auth=require_roles(User.Role.DRIVER, User.Role.FLEET_MANAGER))
+@router.post("/{trip_id}/cancel", response={200: dict, 400: dict}, auth=require_roles(User.Role.DISPATCHER, User.Role.FLEET_MANAGER))
 @transaction.atomic
 def cancel_trip(request, trip_id: int):
     trip = get_object_or_404(Trip, id=trip_id)

@@ -38,7 +38,7 @@ class UserManager(BaseUserManager):
 class User(AbstractBaseUser, PermissionsMixin):
     class Role(models.TextChoices):
         FLEET_MANAGER = 'FLEET_MANAGER', 'Fleet Manager'
-        DRIVER = 'DRIVER', 'Driver'
+        DISPATCHER = 'DISPATCHER', 'Dispatcher'
         SAFETY_OFFICER = 'SAFETY_OFFICER', 'Safety Officer'
         FINANCIAL_ANALYST = 'FINANCIAL_ANALYST', 'Financial Analyst'
 

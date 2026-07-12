@@ -346,7 +346,7 @@ class Command(BaseCommand):
         self.stdout.write("Creating demo users (password: testpass123)...")
         demo_users = [
             ("fleet.manager@transitops.test", User.Role.FLEET_MANAGER),
-            ("driver@transitops.test", User.Role.DRIVER),
+            ("dispatcher@transitops.test", User.Role.DISPATCHER),
             ("safety.officer@transitops.test", User.Role.SAFETY_OFFICER),
             ("analyst@transitops.test", User.Role.FINANCIAL_ANALYST),
         ]

@@ -9,17 +9,17 @@ from ..models import Driver, User
 from ..schemas.drivers import CreateDriverSchema, DriverSchema
 from ..utils import apply_search
 
-router = Router(tags=["Drivers"], auth=require_roles(User.Role.SAFETY_OFFICER, User.Role.DRIVER, User.Role.FLEET_MANAGER))
+router = Router(tags=["Drivers"], auth=require_roles(User.Role.SAFETY_OFFICER, User.Role.DISPATCHER, User.Role.FLEET_MANAGER))
 
 
-@router.get("", response=List[DriverSchema], auth=require_roles(User.Role.SAFETY_OFFICER, User.Role.DRIVER, User.Role.FLEET_MANAGER))
+@router.get("", response=List[DriverSchema], auth=require_roles(User.Role.SAFETY_OFFICER, User.Role.DISPATCHER, User.Role.FLEET_MANAGER))
 def list_drivers(request, search: Optional[str] = None):
     qs = Driver.objects.all().order_by("-id")
     qs = apply_search(qs, ["name", "license_no", "license_category", "contact", "status"], search)
     return qs
 
 
-@router.get("/dispatch-pool", response=List[DriverSchema], auth=require_roles(User.Role.SAFETY_OFFICER, User.Role.DRIVER, User.Role.FLEET_MANAGER))
+@router.get("/dispatch-pool", response=List[DriverSchema], auth=require_roles(User.Role.SAFETY_OFFICER, User.Role.DISPATCHER, User.Role.FLEET_MANAGER))
 def get_dispatch_drivers(request):
     """Only eligible drivers: Available status with a valid license."""
     today = timezone.now().date()

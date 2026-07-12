@@ -13,16 +13,16 @@ import {
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 
-type Role = 'FLEET_MANAGER' | 'DRIVER' | 'SAFETY_OFFICER' | 'FINANCIAL_ANALYST';
+type Role = 'FLEET_MANAGER' | 'DISPATCHER' | 'SAFETY_OFFICER' | 'FINANCIAL_ANALYST';
 
 const navItems: { name: string; href: string; icon: React.ElementType; roles: Role[] }[] = [
   { 
     name: 'Dashboard', href: '/', icon: LayoutDashboard, 
-    roles: ['FLEET_MANAGER', 'DRIVER', 'SAFETY_OFFICER', 'FINANCIAL_ANALYST'],
+    roles: ['FLEET_MANAGER', 'DISPATCHER', 'SAFETY_OFFICER', 'FINANCIAL_ANALYST'],
   },
   { 
     name: 'Fleet', href: '/fleet', icon: Truck, 
-    roles: ['FLEET_MANAGER', 'DRIVER'],
+    roles: ['FLEET_MANAGER', 'DISPATCHER'],
   },
   { 
     name: 'Drivers', href: '/drivers', icon: Users, 
@@ -30,7 +30,7 @@ const navItems: { name: string; href: string; icon: React.ElementType; roles: Ro
   },
   { 
     name: 'Trips', href: '/trips', icon: Navigation, 
-    roles: ['FLEET_MANAGER', 'DRIVER'],
+    roles: ['FLEET_MANAGER', 'DISPATCHER'],
   },
   { 
     name: 'Maintenance', href: '/maintenance', icon: Wrench, 

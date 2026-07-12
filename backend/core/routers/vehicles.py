@@ -7,10 +7,10 @@ from ..models import User, Vehicle
 from ..schemas.vehicles import CreateVehicleSchema, VehicleSchema
 from ..utils import apply_search
 
-router = Router(tags=["Vehicles"], auth=require_roles(User.Role.FLEET_MANAGER, User.Role.DRIVER))
+router = Router(tags=["Vehicles"], auth=require_roles(User.Role.FLEET_MANAGER, User.Role.DISPATCHER))
 
 
-@router.get("", response=List[VehicleSchema], auth=require_roles(User.Role.FLEET_MANAGER, User.Role.DRIVER))
+@router.get("", response=List[VehicleSchema], auth=require_roles(User.Role.FLEET_MANAGER, User.Role.DISPATCHER))
 def list_vehicles(request, status: Optional[str] = None, search: Optional[str] = None):
     qs = Vehicle.objects.all().order_by("-id")
     if status:
@@ -19,7 +19,7 @@ def list_vehicles(request, status: Optional[str] = None, search: Optional[str] =
     return qs
 
 
-@router.get("/dispatch-pool", response=List[VehicleSchema], auth=require_roles(User.Role.FLEET_MANAGER, User.Role.DRIVER))
+@router.get("/dispatch-pool", response=List[VehicleSchema], auth=require_roles(User.Role.FLEET_MANAGER, User.Role.DISPATCHER))
 def get_dispatch_vehicles(request):
     """Only AVAILABLE vehicles can be assigned to new trips."""
     return Vehicle.objects.filter(status=Vehicle.Status.AVAILABLE).order_by("-id")

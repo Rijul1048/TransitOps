@@ -8,8 +8,8 @@ import { Truck, LogIn, Loader2 } from 'lucide-react';
 export default function LoginPage() {
   const { login } = useAuth();
   const router = useRouter();
-  const [email, setEmail] = useState('fleet.manager@transitops.test');
-  const [password, setPassword] = useState('testpass123');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -26,13 +26,6 @@ export default function LoginPage() {
       setLoading(false);
     }
   };
-
-  const QUICK_LOGINS = [
-    { label: 'Fleet Manager', email: 'fleet.manager@transitops.test' },
-    { label: 'Driver', email: 'driver@transitops.test' },
-    { label: 'Safety Officer', email: 'safety.officer@transitops.test' },
-    { label: 'Analyst', email: 'analyst@transitops.test' },
-  ];
 
   return (
     <div className="min-h-screen bg-[#0a0a0a] flex items-center justify-center p-4">
@@ -65,7 +58,7 @@ export default function LoginPage() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 className="w-full bg-[#1a1a1a] border border-gray-700 rounded-lg px-3.5 py-2.5 text-sm text-white placeholder-gray-600 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500/30 transition"
-                placeholder="you@transitops.test"
+                placeholder="you@example.com"
                 required
               />
             </div>
@@ -97,27 +90,13 @@ export default function LoginPage() {
               {loading ? 'Signing in…' : 'Sign in'}
             </button>
           </form>
-
-          {/* Quick Login */}
-          <div className="mt-8">
-            <p className="text-xs text-gray-600 mb-3 text-center">Quick login (demo accounts)</p>
-            <div className="grid grid-cols-2 gap-2">
-              {QUICK_LOGINS.map((u) => (
-                <button
-                  key={u.email}
-                  type="button"
-                  onClick={() => { setEmail(u.email); setPassword('testpass123'); }}
-                  className="text-xs px-3 py-2 rounded-lg bg-gray-900 border border-gray-800 text-gray-400 hover:border-amber-700 hover:text-amber-400 transition text-left truncate"
-                >
-                  {u.label}
-                </button>
-              ))}
-            </div>
-          </div>
         </div>
 
-        <p className="text-center text-xs text-gray-700 mt-6">
-          Default password: <span className="text-gray-500 font-mono">testpass123</span>
+        <p className="text-center text-xs text-gray-600 mt-6">
+          Don&apos;t have an account?{' '}
+          <a href="/register" className="text-amber-500 hover:text-amber-400 transition font-medium">
+            Create one
+          </a>
         </p>
       </div>
     </div>

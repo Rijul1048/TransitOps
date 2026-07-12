@@ -14,6 +14,7 @@ interface AuthContextValue {
   token: string | null;
   isLoading: boolean;
   login: (email: string, password: string) => Promise<void>;
+  register: (email: string, password: string, role?: string) => Promise<void>;
   logout: () => void;
 }
 
@@ -63,8 +64,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     await fetchMe(tkn);
   }, [fetchMe]);
 
+  const register = useCallback(async (email: string, password: string, role?: string) => {
+    const res = await api.post('/auth/register', { email, password, ...(role ? { role } : {}) });
+    const tkn: string = res.data.access_token;
+    localStorage.setItem('transitops_token', tkn);
+    setToken(tkn);
+    await fetchMe(tkn);
+  }, [fetchMe]);
+
   return (
-    <AuthContext.Provider value={{ user, token, isLoading, login, logout }}>
+    <AuthContext.Provider value={{ user, token, isLoading, login, register, logout }}>
       {children}
     </AuthContext.Provider>
   );
