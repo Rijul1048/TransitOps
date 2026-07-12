@@ -1,0 +1,25 @@
+from ninja import Router
+from typing import List, Optional
+from ..models import Vehicle
+from ..schemas.vehicles import VehicleSchema, CreateVehicleSchema  
+
+
+router = Router(tags=["Vehicles"])
+
+@router.get("", response=List[VehicleSchema])
+def list_vehicles(request, status: Optional[str] = None):
+    qs = Vehicle.objects.all()
+    if status:
+        qs = qs.filter(status=status)
+    return qs
+
+@router.get("/dispatch-pool", response=List[VehicleSchema])
+def get_dispatch_vehicles(request):
+    return Vehicle.objects.exclude(status__in=[Vehicle.Status.IN_SHOP, Vehicle.Status.RETIRED])
+
+@router.post("", response={201: VehicleSchema, 400: dict})
+def create_vehicle(request, payload: CreateVehicleSchema):
+    if Vehicle.objects.filter(reg_no=payload.reg_no).exists():
+        return 400, {"detail": "Vehicle registration number must be unique."}
+    vehicle = Vehicle.objects.create(**payload.dict())
+    return 201, vehicle
