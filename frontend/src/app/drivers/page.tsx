@@ -1,7 +1,9 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { api } from '@/lib/api';
+import { useSearch } from '@/contexts/SearchContext';
+import { matchesSearch } from '@/lib/search';
 import { Plus, X, UserCheck, AlertTriangle } from 'lucide-react';
 
 interface Driver {
@@ -16,6 +18,7 @@ interface Driver {
 }
 
 export default function DriversPage() {
+  const { query } = useSearch();
   const [drivers, setDrivers] = useState<Driver[]>([]);
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -50,7 +53,7 @@ export default function DriversPage() {
 
     try {
       const res = await api.post('/drivers', form);
-      setDrivers([...drivers, res.data]);
+      setDrivers([res.data, ...drivers]);
       setIsModalOpen(false);
       setForm({ name: '', license_no: '', license_category: 'HMV', license_expiry: '', contact: '' });
     } catch (err: any) {
@@ -67,6 +70,14 @@ export default function DriversPage() {
       console.error(err);
     }
   };
+
+  const filteredDrivers = useMemo(
+    () =>
+      drivers.filter((d) =>
+        matchesSearch(query, d.name, d.license_no, d.license_category, d.contact, d.status)
+      ),
+    [drivers, query]
+  );
 
   const isExpired = (expiryDate: string) => {
     return new Date(expiryDate) < new Date();
@@ -102,7 +113,14 @@ export default function DriversPage() {
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-800">
-            {drivers.map((d) => {
+            {filteredDrivers.length === 0 ? (
+              <tr>
+                <td colSpan={8} className="px-4 py-8 text-center text-gray-500">
+                  {query ? `No drivers match "${query}".` : 'No drivers registered yet.'}
+                </td>
+              </tr>
+            ) : (
+              filteredDrivers.map((d) => {
               const expired = isExpired(d.license_expiry);
               return (
                 <tr key={d.id} className="hover:bg-gray-900/50 transition">
@@ -141,7 +159,8 @@ export default function DriversPage() {
                   </td>
                 </tr>
               );
-            })}
+              })
+            )}
           </tbody>
         </table>
       </div>
