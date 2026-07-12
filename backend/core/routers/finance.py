@@ -1,12 +1,16 @@
-from ninja import Router
 from typing import Optional
-from django.shortcuts import get_object_or_404
+
 from django.db.models import Max
-from ..models import Vehicle, Trip, FuelLog, MaintenanceLog, Driver
+from django.shortcuts import get_object_or_404
+from ninja import Router
+
+from ..auth import require_roles
+from ..models import Driver, FuelLog, MaintenanceLog, Trip, User, Vehicle
 from ..schemas.finance import FuelLogCreateSchema
 from ..utils import apply_search
 
-router = Router(tags=["Finance & Analytics"])
+router = Router(tags=["Finance & Analytics"], auth=require_roles(User.Role.FINANCIAL_ANALYST, User.Role.FLEET_MANAGER))
+
 
 @router.post("/fuel-logs", response={201: dict})
 def create_fuel_log(request, payload: FuelLogCreateSchema):
@@ -21,6 +25,7 @@ def create_fuel_log(request, payload: FuelLogCreateSchema):
         cost=payload.cost,
     )
     return 201, {"id": log.id, "message": "Fuel log recorded successfully."}
+
 
 @router.get("/fuel-logs", response=list)
 def list_fuel_logs(request, search: Optional[str] = None):
@@ -48,7 +53,8 @@ def list_fuel_logs(request, search: Optional[str] = None):
         for log in logs
     ]
 
-@router.get("/analytics/summary")
+
+@router.get("/analytics/summary", auth=require_roles(User.Role.FINANCIAL_ANALYST, User.Role.FLEET_MANAGER))
 def get_analytics_summary(request):
     total_vehicles = Vehicle.objects.count()
     available_vehicles = Vehicle.objects.filter(status=Vehicle.Status.AVAILABLE).count()
