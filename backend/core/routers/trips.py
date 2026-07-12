@@ -6,13 +6,13 @@ from django.utils import timezone
 from ninja import Router
 
 from ..auth import require_roles
-from ..models import Driver, FuelLog, Trip, Vehicle
+from ..models import Driver, FuelLog, Trip, User, Vehicle
 from ..schemas.trips import CompleteTripSchema, CreateTripSchema
 
-router = Router(tags=["Trips"], auth=require_roles("DISPATCHER", "FLEET_MANAGER"))
+router = Router(tags=["Trips"], auth=require_roles(User.Role.DRIVER, User.Role.FLEET_MANAGER))
 
 
-@router.get("", response=List[dict], auth=require_roles("DISPATCHER", "FLEET_MANAGER"))
+@router.get("", response=List[dict], auth=require_roles(User.Role.DRIVER, User.Role.FLEET_MANAGER))
 def list_trips(request):
     trips = Trip.objects.select_related('vehicle', 'driver').all().order_by('-created_at')
     return [
@@ -36,7 +36,7 @@ def list_trips(request):
     ]
 
 
-@router.post("", response={201: dict, 400: dict}, auth=require_roles("DISPATCHER"))
+@router.post("", response={201: dict, 400: dict}, auth=require_roles(User.Role.DRIVER))
 def create_trip(request, payload: CreateTripSchema):
     vehicle = None
     driver = None
@@ -72,7 +72,7 @@ def create_trip(request, payload: CreateTripSchema):
     return 201, {"id": trip.id, "trip_code": trip.trip_code, "status": trip.status}
 
 
-@router.post("/{trip_id}/dispatch", response={200: dict, 400: dict}, auth=require_roles("DISPATCHER"))
+@router.post("/{trip_id}/dispatch", response={200: dict, 400: dict}, auth=require_roles(User.Role.DRIVER))
 @transaction.atomic
 def dispatch_trip(request, trip_id: int):
     trip = get_object_or_404(Trip, id=trip_id)
@@ -91,7 +91,7 @@ def dispatch_trip(request, trip_id: int):
     return 200, {"detail": f"Trip {trip.trip_code} successfully dispatched."}
 
 
-@router.post("/{trip_id}/complete", response={200: dict, 400: dict}, auth=require_roles("DISPATCHER"))
+@router.post("/{trip_id}/complete", response={200: dict, 400: dict}, auth=require_roles(User.Role.DRIVER))
 @transaction.atomic
 def complete_trip(request, trip_id: int, payload: CompleteTripSchema):
     trip = get_object_or_404(Trip, id=trip_id)
@@ -123,7 +123,7 @@ def complete_trip(request, trip_id: int, payload: CompleteTripSchema):
     return 200, {"detail": f"Trip {trip.trip_code} completed. Vehicle odometer updated and driver marked as Available."}
 
 
-@router.post("/{trip_id}/cancel", response={200: dict, 400: dict}, auth=require_roles("DISPATCHER"))
+@router.post("/{trip_id}/cancel", response={200: dict, 400: dict}, auth=require_roles(User.Role.DRIVER))
 @transaction.atomic
 def cancel_trip(request, trip_id: int):
     trip = get_object_or_404(Trip, id=trip_id)

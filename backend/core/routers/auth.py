@@ -13,9 +13,33 @@ class LoginPayload(BaseModel):
     password: str
 
 
+class RegisterPayload(BaseModel):
+    email: str
+    password: str
+    role: str | None = None
+
+
 class TokenResponse(BaseModel):
     access_token: str
     token_type: str = "bearer"
+
+
+@router.post("/register", response=TokenResponse, auth=None)
+def register(request, payload: RegisterPayload):
+    if User.objects.filter(email__iexact=payload.email).exists():
+        raise HttpError(409, "A user with this email already exists")
+
+    role = payload.role or User.Role.FLEET_MANAGER
+    if role not in {choice[0] for choice in User.Role.choices}:
+        raise HttpError(400, "Invalid role")
+
+    user = User.objects.create_user(
+        email=payload.email,
+        password=payload.password,
+        role=role,
+    )
+    token = create_access_token(user)
+    return TokenResponse(access_token=token)
 
 
 @router.post("/login", response=TokenResponse, auth=None)

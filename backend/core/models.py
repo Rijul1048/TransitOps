@@ -38,7 +38,7 @@ class UserManager(BaseUserManager):
 class User(AbstractBaseUser, PermissionsMixin):
     class Role(models.TextChoices):
         FLEET_MANAGER = 'FLEET_MANAGER', 'Fleet Manager'
-        DISPATCHER = 'DISPATCHER', 'Dispatcher'
+        DRIVER = 'DRIVER', 'Driver'
         SAFETY_OFFICER = 'SAFETY_OFFICER', 'Safety Officer'
         FINANCIAL_ANALYST = 'FINANCIAL_ANALYST', 'Financial Analyst'
 
@@ -49,7 +49,7 @@ class User(AbstractBaseUser, PermissionsMixin):
     is_active = models.BooleanField(default=True)
     is_staff = models.BooleanField(default=False)
     date_joined = models.DateTimeField(default=timezone.now)
-    role = models.CharField(max_length=20, choices=Role.choices, default=Role.DISPATCHER)
+    role = models.CharField(max_length=30, choices=Role.choices, default=Role.FLEET_MANAGER)
 
     objects = UserManager()
 

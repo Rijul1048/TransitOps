@@ -5,13 +5,13 @@ from django.shortcuts import get_object_or_404
 from ninja import Router
 
 from ..auth import require_roles
-from ..models import MaintenanceLog, Vehicle
+from ..models import MaintenanceLog, User, Vehicle
 from ..schemas.maintenance import MaintenanceCreateSchema
 
-router = Router(tags=["Maintenance"], auth=require_roles("FLEET_MANAGER"))
+router = Router(tags=["Maintenance"], auth=require_roles(User.Role.FLEET_MANAGER))
 
 
-@router.post("", response={201: dict}, auth=require_roles("FLEET_MANAGER"))
+@router.post("", response={201: dict}, auth=require_roles(User.Role.FLEET_MANAGER))
 @transaction.atomic
 def log_maintenance(request, payload: MaintenanceCreateSchema):
     vehicle = get_object_or_404(Vehicle, id=payload.vehicle_id)
@@ -30,7 +30,7 @@ def log_maintenance(request, payload: MaintenanceCreateSchema):
     return 201, {"id": log.id, "status": log.status, "vehicle_status": vehicle.status}
 
 
-@router.get("", response=List[dict], auth=require_roles("FLEET_MANAGER"))
+@router.get("", response=List[dict], auth=require_roles(User.Role.FLEET_MANAGER))
 def list_maintenance_logs(request):
     logs = MaintenanceLog.objects.select_related('vehicle').all().order_by('-service_date')
     return [
@@ -48,7 +48,7 @@ def list_maintenance_logs(request):
     ]
 
 
-@router.patch("/{log_id}/complete", response={200: dict, 400: dict}, auth=require_roles("FLEET_MANAGER"))
+@router.patch("/{log_id}/complete", response={200: dict, 400: dict}, auth=require_roles(User.Role.FLEET_MANAGER))
 @transaction.atomic
 def complete_maintenance(request, log_id: int):
     log = get_object_or_404(MaintenanceLog, id=log_id)
