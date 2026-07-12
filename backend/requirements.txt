@@ -12,3 +12,4 @@ sqlparse==0.5.5
 typing-inspection==0.4.2
 typing_extensions==4.16.0
 tzdata==2026.3
+Faker==40.28.1
